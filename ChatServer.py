@@ -32,7 +32,10 @@ class ChatServer:
                     self.baned_ip.append(comm[1])
                 elif comm[0] == "un_ban":
                     self.ban_ip = None
-                    self.baned_ip.remove(comm[1])
+                    try:
+                        self.baned_ip.remove(comm[1])
+                    except ValueError:
+                        print("IP isn't in baned ip")
                 elif comm[0] == "show_baned":
                     print(self.baned_ip)
             else:
