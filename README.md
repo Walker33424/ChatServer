@@ -8,7 +8,7 @@ All you have to do is double-click to open
 This server provides several useful commands
 1个ban:(Kick out IP and prevent reconnection)
 usage:ban [ip]
-2：解禁：
-用法：un_ban [被禁ip]
+2：un_ban：
+usage：un_ban [baned ip]
 3:show_baned:
 usage:show_baned
