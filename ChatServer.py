@@ -9,17 +9,6 @@ from time import sleep
 
 
 class ChatServer:
-    """This is a ChatServer
-If you want to use this server,you can call the function "main" directly
-or you can call the method in the ChatServer class by yourself.
-Note that when you instantiate ChatServer, you need to pass parameters
-(the port used, since we will connect to server port 8000
-when we develop the client connection,
-we recommend passing 8000 as a parameter)
-in the class. Some methods:
-processing_communication --  sends new message to client
-processing_communication2 -- processing information sent by client to server
-processing_connections -- used to start the server"""
     def __init__(self, port, address, server_name):
         self.connect_number = 0
         self.users = []
