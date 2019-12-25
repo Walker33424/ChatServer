@@ -1,4 +1,6 @@
 # ChatServer
+!!!!!Please don't worry about it, these are machine translation (except at the beginning of your shit)
+!!!!!!!!!!!!
 A chat server and client(Again, I am a middle school student)
 use in lan
 My original intention is to chat smoothly in computer class
