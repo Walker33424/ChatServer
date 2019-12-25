@@ -1,6 +1,7 @@
 # -*- coding:UTF-8 -*-
 import threading as t
 import socket as s
+from random import random
 import sys
 import bz2
 from copy import *
@@ -11,16 +12,30 @@ from time import sleep
 class ChatServer:
     def __init__(self, port, address, server_name):
         self.connect_number = 0
+        self.thread_number = 0
+        self.send_message_state = []
         self.users = []
         self.baned_ip = []
         self.ban_ip = None
         self._lock = t.Lock()
         self.server_name = server_name
+        self.used_name = []
         self.address = address
         self.new_message = None
         self._number = 0
         self.port = port
         self.old_message = None
+
+    def check_message_send(self):
+        while True:
+            if self._lock.locked():
+                sleep(2.5)
+                self._lock.release()
+            if not all(self.send_message_state):
+                self._lock.acquire()
+                sleep(5)
+            else:
+                self._lock.release()
 
     def enter_command(self):
         while True:
@@ -34,34 +49,64 @@ class ChatServer:
                     self.ban_ip = None
                     try:
                         self.baned_ip.remove(comm[1])
-                    except ValueError:
+                    except IndexError:
                         print("IP isn't in baned ip")
                 elif comm[0] == "show_baned":
                     print(self.baned_ip)
             else:
                 print("Unknown command")
 
-    def processing_communication(self, socket_):
+    def processing_communication(self, socket_, name1):
         """Broadcasting information to users
         user <- data <- server
 
         """
+        index = None
+        self.thread_number += 1
+        num = "Thread" + str(self.thread_number)
+        while True:
+            if name1 == "RENAME FAILED":
+                ran = random()
+                if ran in self.used_name:
+                    continue
+                else:
+                    break
+            else:
+                break
+        self.send_message_state.append(name1)
+        try:
+            index = self.send_message_state.index(name1)
+        except ValueError:
+            socket_[0].send(bz2.compress("你的连接存在错误, 请重新连接(connect wrong happen, please try again)"))
+            socket_[0].close()
         self.connect_number += 1
         # active count return active count(len(t.enumerate()))
+        self.new_message = ""
+        self.old_message = ""
         while True:
+            self.send_message_state[index] = False
             try:
-                if self.new_message != self.old_message:
+                if self.new_message.strip() != self.old_message.strip():
+                    print(1)
+                    print(self.new_message, self.old_message)
                     socket_[0].send(bz2.compress(self.new_message.encode("utf-32")))
                     self.old_message = deepcopy(self.new_message)
+                    self.send_message_state[index] = True
+                    # 释放 Global Interpreter Lock
+                    self._lock.acquire()
+                    self._lock.release()
                 if socket_[1][0] == self.ban_ip:
                     try:
                         print(socket_[1][0] + " thread2 closed")
                         socket_[0].send(bz2.compress("友好的中文提示:你已被踢出服务器, 并且在管理员没有取消封杀的情况下无法再次加入".encode("utf-32")))
                         socket_[0].close()
                     except OSError:
+                        self.connect_number -= 1
+                        del self.send_message_state[index]
                         return
                     return
             except ConnectionResetError:
+                del self.send_message_state[index]
                 self.connect_number -= 1
                 return
 
@@ -96,7 +141,9 @@ class ChatServer:
                 self.connect_number -= 1
                 print(socket_[1][0] + "Closed")
                 return
+            self._lock.acquire()
             self.new_message = deepcopy(message)
+            self._lock.release()
 
     def processing_connections(self):
         server = s.socket()
@@ -122,10 +169,15 @@ class ChatServer:
                     continue
                 print("INFO:Connect from:" + data_socket[1][0] + ", port:" + str(data_socket[1][1]))
                 self.users.append(data_socket[1])
+                ran1 = str(random())
+                if ran1 not in self.used_name:
+                    ran = deepcopy(ran1)
+                else:
+                    ran = "RENAME FAILED"
                 print(1)
-                t.Thread(target=self.processing_communication, args=(data_socket,)).start()
+                t.Thread(target=self.processing_communication, args=(data_socket, ran)).start()
                 print(2)
-                t.Thread(target=self.processing_communication2, args=(data_socket,)).start()
+                t.Thread(target=self.processing_communication2, args=(data_socket, )).start()
                 print(3)
             except (TypeError, ValueError):
                 print("please input again")
@@ -137,8 +189,8 @@ class ChatServer:
             self.users.append(data_socket[1][0])
             print("New connect:", data_socket[1][0])
             print("Connection Number:", self.connect_number // 2)
-            t.Thread(target=self.processing_communication, args=(data_socket,)).start()
-            t.Thread(target=self.processing_communication2, args=(data_socket,)).start()
+            t.Thread(target=self.processing_communication, args=(data_socket, ran)).start()
+            t.Thread(target=self.processing_communication2, args=(data_socket, )).start()
 
 
 def main():

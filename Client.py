@@ -1,4 +1,4 @@
-# -*- coding:UTF-8 -*-
+﻿# -*- coding:UTF-8 -*-
 import socket as s
 import bz2
 from random import shuffle, random
@@ -22,8 +22,8 @@ class Client:
         else:
             self.id = "开发者专属中文标识"
         self.user_identity = ["ID:" + self.id]
-        self.find_server_sock = s.socket(type=s.SOCK_DGRAM)
-        self.find_server_sock.bind(("0.0.0.0", 13365))
+        # self.find_server_sock = s.socket(type=s.SOCK_DGRAM)
+        # self.find_server_sock.bind(("0.0.0.0", 13365))
         self.tk = tk.Tk()
         self.top = tk.Toplevel(self.tk)
         self.sock = None
@@ -89,8 +89,11 @@ class Client:
             if not self.message:
                 self.sock.close()
                 return
+            self.message = bz2.decompress(self.message).decode("UTF-32")
+            print(self.message)
+            print(self.old_message)
             if self.message != self.old_message:
-                self.message_box.insert("insert", bz2.decompress(self.message).decode("utf-32"))
+                self.message_box.insert("insert", self.message)
                 self.old_message = deepcopy(self.message)
 
     def process(self):
@@ -100,7 +103,7 @@ class Client:
 
     def start_run(self):
         t.Thread(target=self.unknown_title).start()
-        t.Thread(target=self.finding_server).start()
+        # t.Thread(target=self.finding_server).start()
         self.tk.mainloop()
 
 
