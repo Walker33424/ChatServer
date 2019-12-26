@@ -30,3 +30,7 @@ usage:show_baned
 
 Update 1: reduce the risk of unable to receive new messages (but it will happen, just probability is small, so I suggest that every message sent twice as much as possible)
 
+Update 2:Each message sent by default twice, after receiving the message server if the same two messages will send one to the client, otherwise the first sent to the client.
+
+
+The server will print  before 20 characters of a problem message
