@@ -119,6 +119,7 @@ class ChatServer:
             sleep(5)
 
     def processing_communication2(self, socket_):
+        message1 = ""
         """
 
         user -> data -> server
@@ -132,14 +133,28 @@ class ChatServer:
                     self.connect_number -= 1
                     socket_[0].close()
                     return
-                message = bz2.decompress(socket_[0].recv(102400)).decode("utf-32").strip() + "(" + socket_[1][0] + ")\n"
+                message1 = socket_[0].recv(102400)
+                message1 = bz2.decompress(message1).decode("utf-32") + "(" + socket_[1][0] + ")\n"
+                message = message1.split("-!seq!-")
+                if len(message) >= 2:
+                    if message[0] == message[1]:
+                        message = message[0]
+                    else:
+                        message = message[1]
+                else:
+                    message = message[0]
             except OSError:
                 self.connect_number -= 1
                 print("INFO:recv the wrong message,from" + socket_[1][0])
+                print("The wrong message is:", message1[:20])
                 return
             except ConnectionResetError:
                 self.connect_number -= 1
                 print(socket_[1][0] + "Closed")
+                return
+            except Exception as error_data:
+                print(type(error_data), str(error_data))
+                self.connect_number -= 1
                 return
             self._lock.acquire()
             self.new_message = deepcopy(message)
