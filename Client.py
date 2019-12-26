@@ -22,8 +22,8 @@ class Client:
         else:
             self.id = "开发者专属中文标识"
         self.user_identity = ["ID:" + self.id]
-        # self.find_server_sock = s.socket(type=s.SOCK_DGRAM)
-        # self.find_server_sock.bind(("0.0.0.0", 13365))
+        self.find_server_sock = s.socket(type=s.SOCK_DGRAM)
+        self.find_server_sock.bind(("0.0.0.0", 13365))
         self.tk = tk.Tk()
         self.top = tk.Toplevel(self.tk)
         self.sock = None
@@ -68,6 +68,7 @@ class Client:
                     self.found_server.insert("insert", "Found Server, ip=" + data[1][0] + ", name=" + data1[1])
                     old_server = deepcopy(data)
             except Exception as error:
+                print(error)
                 del error
                 continue
             else:
@@ -103,7 +104,7 @@ class Client:
 
     def start_run(self):
         t.Thread(target=self.unknown_title).start()
-        # t.Thread(target=self.finding_server).start()
+        t.Thread(target=self.finding_server).start()
         self.tk.mainloop()
 
 
