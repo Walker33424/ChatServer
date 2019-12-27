@@ -63,7 +63,6 @@ class ChatServer:
         """
         index = None
         self.thread_number += 1
-        num = "Thread" + str(self.thread_number)
         while True:
             if name1 == "RENAME FAILED":
                 ran = random()
@@ -89,7 +88,8 @@ class ChatServer:
                 if self.new_message.strip() != self.old_message.strip():
                     print(1)
                     print(self.new_message, self.old_message)
-                    socket_[0].send(bz2.compress(self.new_message.encode("utf-32")))
+                    for q1 in range(6):
+                        socket_[0].send(bz2.compress((self.new_message + "-!seq!-").encode("UTF-32")))
                     self.old_message = deepcopy(self.new_message)
                     self.send_message_state[index] = True
                     # 释放 Global Interpreter Lock
@@ -98,15 +98,16 @@ class ChatServer:
                 if socket_[1][0] == self.ban_ip:
                     try:
                         print(socket_[1][0] + " thread2 closed")
-                        socket_[0].send(bz2.compress("友好的中文提示:你已被踢出服务器, 并且在管理员没有取消封杀的情况下无法再次加入".encode("utf-32")))
+                        for q1 in range(6):
+                            socket_[0].send(bz2.compress("友好的中文提示:你已被踢出服务器, 并且在管理员没有取消封杀的情况下无法再次加入".encode("utf-32")))
                         socket_[0].close()
                     except OSError:
                         self.connect_number -= 1
-                        del self.send_message_state[index]
+                        self.send_message_state[index] = True
                         return
                     return
             except ConnectionResetError:
-                del self.send_message_state[index]
+                self.send_message_state[index] = True
                 self.connect_number -= 1
                 return
 
@@ -134,15 +135,16 @@ class ChatServer:
                     socket_[0].close()
                     return
                 message1 = socket_[0].recv(102400)
-                message1 = bz2.decompress(message1).decode("utf-32") + "(" + socket_[1][0] + ")\n"
+                message1 = bz2.decompress(message1).decode("utf-32")
                 message = message1.split("-!seq!-")
                 if len(message) >= 2:
                     if message[0] == message[1]:
                         message = message[0]
                     else:
-                        message = message[1]
+                        message = message[0]
                 else:
                     message = message[0]
+                message += ("(" + socket_[1][0] + ")\n")
             except OSError:
                 self.connect_number -= 1
                 print("INFO:recv the wrong message,from" + socket_[1][0])

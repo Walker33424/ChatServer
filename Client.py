@@ -18,9 +18,11 @@ class Client:
             if data != "!$##@@#!$#@###":
                 raise FileNotFoundError
         except FileNotFoundError:
+            self.data = "User"
             self.id = str(random())
         else:
             self.id = "开发者专属中文标识"
+            self.data = list("#?*&%^!&$#@$##^!@#$%#@*%@#&@^!$&@#^$@#$!@$!#*@!#&!@#[]:;,.<>")
         self.user_identity = ["ID:" + self.id]
         self.find_server_sock = s.socket(type=s.SOCK_DGRAM)
         self.find_server_sock.bind(("0.0.0.0", 13365))
@@ -41,22 +43,25 @@ class Client:
         tk.Label(self.top, text="Server IP:").place(x=0, y=0)
         self.server_ip = ttk.Entry(self.top)
         self.server_ip.place(x=100, y=0)
-        self.message = None
-        self.old_message = None
+        self.message = ""
+        self.old_message = ""
         self.username = username
         ttk.Button(self.top, text="Connect", command=self.connect_to_server).place(x=250, y=0)
         ttk.Button(self.tk, command=self.process, text="Send").place(x=150, y=0)
 
     def unknown_title(self):
-        data = list("#?*&%^!&$#@$##^!@#$%#@*%@#&@^!$&@#^$@#$!@$!#*@!#&!@#[]:;,.<>")
-        while True:
-            sleep(0.01)
-            shuffle(data)
-            data1 = "".join(data)
-            self.tk.title(data1)
-            shuffle(data)
-            data2 = "".join(data)
-            self.top.title(data2)
+        if self.data == "User":
+            self.tk.title("ChatServer-Client (Beta)")
+            self.top.title("ChatServer-Client (Beta)")
+        else:
+            while True:
+                sleep(0.1)
+                shuffle(self.data)
+                data1 = "".join(self.data)
+                self.tk.title(data1)
+                shuffle(self.data)
+                data2 = "".join(self.data)
+                self.top.title(data2)
 
     def finding_server(self):
         old_server = None
@@ -81,6 +86,8 @@ class Client:
         except Exception as error_data:
             m.showerror("ERROR", repr(type(error_data)) + str(error_data))
         else:
+            for q1 in range(6):
+                self.sock.send(bz2.compress((self.username + " Join" + "-!seq!-").encode("UTF-32")))
             m.showinfo("INFO", "Done connected to " + self.server_ip.get())
             t.Thread(target=self.process1).start()
 
@@ -90,17 +97,20 @@ class Client:
             if not self.message:
                 self.sock.close()
                 return
-            self.message = bz2.decompress(self.message).decode("UTF-32")
-            print(self.message)
-            print(self.old_message)
+            message1 = bz2.decompress(self.message).decode("UTF-32")
+            message = message1.split("-!seq!-")
+            self.message = message[0]
+            print("New message:" + self.message)
+            print("Old message:" + self.old_message)
             if self.message != self.old_message:
                 self.message_box.insert("insert", self.message)
                 self.old_message = deepcopy(self.message)
 
     def process(self):
         mess = self.message_entry.get(1.0, "end")
-        message = self.username.title() + str(self.user_identity + ["Time:" + ctime()]) + ":" + mess
-        self.sock.send(bz2.compress(message.encode("utf-32")))
+        message = self.username.title() + str(self.user_identity + ["Time:" + ctime()]) + ":" + mess.strip()
+        for q in range(6):
+            self.sock.send(bz2.compress((message.strip() + "-!seq!-").encode("utf-32")))
 
     def start_run(self):
         t.Thread(target=self.unknown_title).start()
@@ -109,7 +119,7 @@ class Client:
 
 
 def main():
-    client = Client(input("Username:"))
+    client = Client(input("Username:").strip())
     client.start_run()
 
 
