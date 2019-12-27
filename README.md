@@ -39,5 +39,6 @@ The server will print  before 20 characters of a problem message
 Update3 : 
 I found that sometimes the message will not receive, so each message will send six times between the server and the client
 When new users to connect server will be broadcast
+
 Also changed some logical mistakes
 
