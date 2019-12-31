@@ -46,3 +46,6 @@ Also changed some logical mistakes
 Update4:
 
 Add the scrollbar and Delete all message button, used for pulling all chat message box, and Delete all chat message box content
+
+Provide lower resolution to use client - if your resolution is very low or in the laptop
+
