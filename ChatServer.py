@@ -13,9 +13,11 @@ class ChatServer:
     def __init__(self, port, address, server_name):
         self.connect_number = 0
         self.thread_number = 0
+        self.file = open("ChatMessages.txt", "a+")
         self.send_message_state = []
         self.users = []
         self.baned_ip = []
+        self._file_lock = t.Lock()
         self.ban_ip = None
         self._lock = t.Lock()
         self.server_name = server_name
@@ -136,6 +138,9 @@ class ChatServer:
                     return
                 message1 = socket_[0].recv(102400)
                 message1 = bz2.decompress(message1).decode("utf-32")
+                if not message1:
+                    self.connect_number -= 1
+                    return
                 message = message1.split("-!seq!-")
                 if len(message) >= 2:
                     if message[0] == message[1]:
@@ -161,6 +166,10 @@ class ChatServer:
             self._lock.acquire()
             self.new_message = deepcopy(message)
             self._lock.release()
+            self._file_lock.acquire()
+            self.file.write(message)
+            self.file.flush()
+            self._file_lock.release()
 
     def processing_connections(self):
         server = s.socket()
