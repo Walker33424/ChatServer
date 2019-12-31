@@ -42,3 +42,7 @@ When new users to connect server will be broadcast
 
 Also changed some logical mistakes
 
+
+Update4:
+
+Add the scrollbar and Delete all message button, used for pulling all chat message box, and Delete all chat message box content
