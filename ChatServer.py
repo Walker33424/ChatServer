@@ -153,7 +153,7 @@ class ChatServer:
             except OSError:
                 self.connect_number -= 1
                 print("INFO:recv the wrong message,from" + socket_[1][0])
-                print("The wrong message is:", message1[:20])
+                print("The wrong message is:", message1[:20] + "..." + message1[-20:])
                 return
             except ConnectionResetError:
                 self.connect_number -= 1
@@ -221,7 +221,7 @@ class ChatServer:
 
 def main():
     radio_address = input("Please enter radio broadcast address:")
-    sn = input("Please enter the server name:")
+    sn = input("Please enter the server name:")[:30]
     server = ChatServer(8505, radio_address, sn)
     server.processing_connections()
 
