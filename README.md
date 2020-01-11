@@ -49,3 +49,8 @@ Add the scrollbar and Delete all message button, used for pulling all chat messa
 
 Provide lower resolution to use client - if your resolution is very low or in the laptop
 
+
+Update4.5 2020/1/11 18:50 Beijing
+
+
+Submitted by the client is not completed! Because I can't find my U disk, found now, at once uploaded
