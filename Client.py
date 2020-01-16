@@ -14,8 +14,11 @@ from tkinter import messagebox as m
 
 class Client:
     def __init__(self, username, port=8505, file_transmission_port=8506):
+        self.state = None
         self.port = port
+        self.data_dict= {}
         self.image_transmission_port = file_transmission_port
+        self.files = []
         try:
             data = open("IDENTITY").read()
             if data != "!$##@@#!$#@###":
@@ -37,14 +40,23 @@ class Client:
                 ignored = data["found"]
                 ignored = data["message entry"]
                 ignored = data["server ip"]
+                ignored = data["upload"]
+                ignored = data["download"]
+                ignored = data["get"]
+                self.data_dict = deepcopy(data)
+                del ignored
             except KeyError:
+                raise FileNotFoundError
+            except Exception:
                 raise FileNotFoundError
 
         except FileNotFoundError:
             data = {"send": "Send", "message_box": "All chat message", "clear message": "Delete all message",
-                    "connect": "Connect", "found": "Found server:", "message entry": "Message entry", "server ip":\
-                    "Server IP:"}
+                    "connect": "Connect", "found": "Found server:", "message entry": "Message entry", "server ip":
+                        "Server IP:", "upload": "Upload...", "download": "Download...", "get": "Get file...", "save":
+                        "Save File", "load": "File load", "change": "Change file.."}
             print("File not found")
+            self.data_dict = deepcopy(data)
 
         self.file = open("C:\\Windows\\ChatMessage.ioi", "a+")
         self.file2 = open("ChatMessage.txt", "a+")
@@ -53,6 +65,7 @@ class Client:
         self.find_server_sock.bind(("0.0.0.0", 13365))
         self.tk = tk.Tk()
         self.top = tk.Toplevel(self.tk)
+        self.v = None
         self.sock = None
         ttk.Button(self.tk, command=self.delete_message, text=data["clear message"]).place(x=0, y=250)
         self.message_entry = tk.Text(self.tk, height=15, width=60)
@@ -66,6 +79,9 @@ class Client:
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.found_server = tk.Text(self.top, height=45, width=120)
         tk.Label(self.top, text=data["found"]).place(x=0, y=125)
+        self.op = None
+        ttk.Button(self.tk, command=self.loader, text="Update..").pack()
+        ttk.Button(self.tk, command=self.loader2, text="Download..").pack()
         self.found_server.place(x=0, y=150)
         self.message_box.place(x=0, y=305)
         tk.Label(self.tk, text=data["message_box"]).place(x=0, y=280)
@@ -82,16 +98,64 @@ class Client:
         ttk.Button(self.top, text=data["connect"], command=self.connect_to_server).place(x=250, y=0)
         ttk.Button(self.tk, command=self.process, text=data["send"]).place(x=150, y=0)
 
+    def recv_check(self, sock):
+        sleep(10)
+        if self.state:
+            return
+        else:
+            sock.close()
+
     def file_saver(self):
-        filedialog.asksaveasfilename(title=u"")
+        c = s.socket()
+        file_type = self.v.get().split(".")[-1]
+        path = filedialog.asksaveasfilename(title=self.data_dict["save"], filetypes=([file_type.lower(), file_type.upper()],))
+        c.connect((self.server_ip.get(), self.image_transmission_port))
+        print(self.v.get())
+        c.send(b"REQUEST:" + b"0" + (self.v.get()[:-5]).encode())
+        t.Thread(target=self.recv_check, args=(c,))
+        self.state = False
+        data = c.recv(102400)
+        self.state = True
+        while True:
+            data += c.recv(102400)
+            if b"-!end!-" in data:
+                break
+            elif data[:5] == b"ERROR":
+                m.showerror("ERROR", data.decode("utf-8"))
+                c.close()
+                return
+        path = path.strip()
+        file = open(path.replace("/", "\\") + self.v.get()[:-5].strip(), "wb")
+        file.write(data)
+        file.close()
+        c.close()
 
-    def image_loader(self):
+    def loader2(self):
         tk2 = tk.Toplevel(self.tk)
-        tk2.title("File load")
-        default_dir = r""
-        file_path = filedialog.askopenfilename(title=u'选择文件', initialdir=(os.path.expanduser(default_dir)))
-        file = open(file_path, "rb")
+        tk2.title(self.data_dict["load"])
+        tk2.geometry("100x100")
+        self.v = tk.StringVar(tk2)
+        self.op = ttk.OptionMenu(tk2, self.v, *self.files)
+        tk.Label(tk2, text=self.data_dict["change"]).place(x=0, y=0)
+        self.op.place(x=0, y=25)
+        ttk.Button(tk2, command=self.file_saver, text=self.data_dict["change"]).pack()
 
+    def loader(self):
+        sock = s.socket()
+        default_dir = r""
+        file_path = filedialog.askopenfilename(title=self.data_dict["change"], initialdir=(os.path.expanduser
+                                                                                           (default_dir)))
+        file_path = file_path.replace("/", "\\")
+        file = open(file_path, "rb")
+        filename = file_path.split("\\")[-1][:10]
+        print(filename)
+        data = file.read()
+        sock.connect((self.server_ip.get(), 8506))
+        if len(filename) <= 9:
+            filename = filename.center(10)
+        elif len(filename) <= 11:
+            filename = filename[:11]
+        sock.send(filename.encode() + b"UPLOAD:" + data + b"-!end of file!-")
 
     def delete_message(self):
         self.ignored_char = None
@@ -155,6 +219,8 @@ class Client:
             print("New message:", self.message)
             print("Old message:", self.old_message)
             if self.message != self.old_message:
+                if "File" in self.message[-8:]:
+                    self.files.append(self.message)
                 self.message_box.insert("insert", self.message)
                 self.file.write(self.message)
                 self.file2.write(self.message)

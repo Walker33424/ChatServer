@@ -7,13 +7,21 @@ import bz2
 from copy import *
 # from typing import Any, Tuple
 from time import sleep
+import time
 
 
 class ChatServer:
-    def __init__(self, port, address, server_name):
+    def __init__(self, port, address, server_name, max_file_size):
         self.connect_number = 0
+        self.max_file_size = max_file_size
         self.thread_number = 0
+        self.files = []
+        self.state = False
         self.file = open("ChatMessages.txt", "a+")
+        self.get_file_sock = s.socket()
+        self.get_file_sock.bind(("0.0.0.0", 8506))
+        self.get_file_sock.listen(75)
+        self.check_sock = s.socket()
         self.send_message_state = []
         self.users = []
         self.baned_ip = []
@@ -27,6 +35,63 @@ class ChatServer:
         self._number = 0
         self.port = port
         self.old_message = None
+
+    def check_connect_timeout(self, sock):
+        time.sleep(10)
+        if self.state:
+            return
+        else:
+            sock[0].close()
+            return
+
+    def file_send(self):
+        while True:
+            self.state = False
+            sock = self.get_file_sock.accept()
+            t.Thread(target=self.check_connect_timeout, args=(sock,)).start()
+            try:
+                filename = sock[0].recv(102400)
+            except OSError:
+                continue
+            self.state = True
+            print(filename)
+            print("filename[8:]:", filename[8:])
+            print(filename[:8])
+            if filename[:8] == b"REQUEST:":
+                try:
+                    data = open(".\\data\\" + filename[8:].decode(), "rb").read()
+                except FileNotFoundError:
+                    sock[0].send(b"ERROR not found")
+                else:
+                    sock[0].sendall(data + b"-!end!-")
+                    sock[0].close()
+                    continue
+            elif filename[10:17] == b"UPLOAD:":
+                if b"-!end of file!-" not in filename:
+                    while True:
+                        filename += sock[0].recv(102400)
+                        if b"-!end of file!-" in filename:
+                            break
+                if len(filename[17:]) > self.max_file_size:
+                    sock[0].send(b"ERROR File size must > " + str(self.max_file_size).encode() + b"B")
+                else:
+                    message = (time.ctime() + filename[:10].decode() + "(" + sock[1][0] + ")" + "." + filename
+                    [:10].
+                               decode().split(".")[-1]).strip() + "File"
+                    message = message.strip()
+                    message = message.replace(":", " ")
+                    message = message.replace("(", "I")
+                    message = message.replace(")", "P")
+                    message = message.replace(" ", "")
+                    file = open(".\\data\\0" + message[:-4], "wb")
+                    file.write(filename[17:])
+                    self._lock.acquire()
+                    self.new_message = deepcopy(message + "\n")
+                    self._lock.release()
+            else:
+                sock[0].send(b"ERROR403")
+                sock[0].close()
+                continue
 
     def check_message_send(self):
         while True:
@@ -176,6 +241,7 @@ class ChatServer:
         conn_num = int(input("please input max connects(1-999999999):" or "10000"))
         t.Thread(target=self.enter_command).start()
         t.Thread(target=self.radio_broadcast).start()
+        t.Thread(target=self.file_send).start()
         while True:
             try:
                 print("No connection".center(79, "*"))
@@ -203,7 +269,7 @@ class ChatServer:
                 print(1)
                 t.Thread(target=self.processing_communication, args=(data_socket, ran)).start()
                 print(2)
-                t.Thread(target=self.processing_communication2, args=(data_socket, )).start()
+                t.Thread(target=self.processing_communication2, args=(data_socket,)).start()
                 print(3)
             except (TypeError, ValueError):
                 print("please input again")
@@ -216,13 +282,14 @@ class ChatServer:
             print("New connect:", data_socket[1][0])
             print("Connection Number:", self.connect_number // 2)
             t.Thread(target=self.processing_communication, args=(data_socket, ran)).start()
-            t.Thread(target=self.processing_communication2, args=(data_socket, )).start()
+            t.Thread(target=self.processing_communication2, args=(data_socket,)).start()
 
 
 def main():
     radio_address = input("Please enter radio broadcast address:")
     sn = input("Please enter the server name:")[:30]
-    server = ChatServer(8505, radio_address, sn)
+    file_size = int(input("Please input max upload file size(B):"))
+    server = ChatServer(8505, radio_address, sn, file_size)
     server.processing_connections()
 
 

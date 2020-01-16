@@ -1,10 +1,10 @@
 ﻿# -*- coding:UTF-8 -*-
-import tkinter.filedialog
 import socket as s
 import Client
 from random import random
 import tkinter.ttk as ttk
 import tkinter as tk
+from copy import deepcopy
 
 
 class Client1(Client.Client):
@@ -29,14 +29,22 @@ class Client1(Client.Client):
                 ignored = data["found"]
                 ignored = data["message entry"]
                 ignored = data["server ip"]
+                ignored = data["upload"]
+                ignored = data["download"]
+                ignored = data["get"]
+                self.data_dict = deepcopy(data)
             except KeyError:
+                raise FileNotFoundError
+            except Exception:
                 raise FileNotFoundError
 
         except FileNotFoundError:
             data = {"send": "Send", "message_box": "All chat message", "clear message": "Delete all message",
-                    "connect": "Connect", "found": "Found server:", "message entry": "Message entry", "server ip":\
-                    "Server IP:"}
+                    "connect": "Connect", "found": "Found server:", "message entry": "Message entry", "server ip":
+                        "Server IP:", "upload": "Upload...", "download": "Download...", "get": "Get file...", "save":
+                        "Save File", "load": "File load", "change": "Change file.."}
             print("File not found")
+            self.data_dict = deepcopy(data)
         else:
             self.id = "开发者专属中文标识"
             self.data = list("#?*&%^!&$#@$##^!@#$%#@*%@#&@^!$&@#^$@#$!@$!#*@!#&!@#[]:;,.<>")
