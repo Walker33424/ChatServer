@@ -48,50 +48,63 @@ class ChatServer:
         while True:
             self.state = False
             sock = self.get_file_sock.accept()
+            if sock[1][0] in self.baned_ip:
+                sock[0].close()
+                continue
             t.Thread(target=self.check_connect_timeout, args=(sock,)).start()
             try:
                 filename = sock[0].recv(102400)
             except OSError:
                 continue
             self.state = True
-            print(filename)
-            print("filename[8:]:", filename[8:])
-            print(filename[:8])
-            if filename[:8] == b"REQUEST:":
-                try:
-                    data = open(".\\data\\" + filename[8:].decode(), "rb").read()
-                except FileNotFoundError:
-                    sock[0].send(b"ERROR not found")
+            print("filename.split(b':')[1]:", filename.split(b":")[1])
+            print(filename.split(b":")[0])
+            try:
+                if filename[:8] == b"REQUEST:":
+                    try:
+                        data = open(".\\data\\" + filename[8:].decode(), "rb").read()
+                    except FileNotFoundError:
+                        sock[0].send(b"ERROR not found")
+                    else:
+                        sock[0].sendall(data + b"-!end!-")
+                        sock[0].close()
+                        continue
+                elif filename.split(b"!:!:")[1] == b"UPLOAD":
+                    print("done to elif")
+                    filename = filename.split(b"!:!:")
+                    file_data = filename[2]
+                    if b"-!end of file!-" not in file_data:
+                        print("recv more")
+                        while True:
+                            file_data += sock[0].recv(102400)
+                            if b"-!end of file!-" in file_data:
+                                print("break")
+                                break
+                    print("process data")
+                    if len(file_data) > self.max_file_size:
+                        sock[0].send(b"ERROR File size must > " + str(self.max_file_size).encode() + b"B")
+                    else:
+                        message = (time.ctime() + " " + filename[0].decode() + "(" + sock[1][0] + ")" + "." + filename
+                            [0].
+                               decode().split(".")[-1]).strip() + "File"
+                        message = message.strip()
+                        message = message.replace(":", " ")
+                        message = message.replace("(", "I")
+                        message = message.replace(")", "P")
+                        message = message.replace(" ", "")
+                        file = open(".\\data\\0" + message[:-4], "wb")
+                        file.write(file_data[:-15])
+                        file.close()
+                        print("send message")
+                        self._lock.acquire()
+                        self.new_message = deepcopy(message + "\n")
+                        self._lock.release()
                 else:
-                    sock[0].sendall(data + b"-!end!-")
+                    sock[0].send(b"ERROR403")
                     sock[0].close()
                     continue
-            elif filename[10:17] == b"UPLOAD:":
-                if b"-!end of file!-" not in filename:
-                    while True:
-                        filename += sock[0].recv(102400)
-                        if b"-!end of file!-" in filename:
-                            break
-                if len(filename[17:]) > self.max_file_size:
-                    sock[0].send(b"ERROR File size must > " + str(self.max_file_size).encode() + b"B")
-                else:
-                    message = (time.ctime() + filename[:10].decode() + "(" + sock[1][0] + ")" + "." + filename
-                    [:10].
-                               decode().split(".")[-1]).strip() + "File"
-                    message = message.strip()
-                    message = message.replace(":", " ")
-                    message = message.replace("(", "I")
-                    message = message.replace(")", "P")
-                    message = message.replace(" ", "")
-                    file = open(".\\data\\0" + message[:-4], "wb")
-                    file.write(filename[17:])
-                    self._lock.acquire()
-                    self.new_message = deepcopy(message + "\n")
-                    self._lock.release()
-            else:
-                sock[0].send(b"ERROR403")
-                sock[0].close()
-                continue
+            except Exception as error_data:
+                print(type(error_data)(str(error_data)))
 
     def check_message_send(self):
         while True:
@@ -154,7 +167,8 @@ class ChatServer:
             try:
                 if self.new_message.strip() != self.old_message.strip():
                     print(1)
-                    print(self.new_message, self.old_message)
+                    print("new message:", self.new_message, "old message:" , self.old_message)
+                    print("message send")
                     for q1 in range(6):
                         socket_[0].send(bz2.compress((self.new_message + "-!seq!-").encode("UTF-32")))
                     self.old_message = deepcopy(self.new_message)

@@ -19,6 +19,16 @@ class Client1(Client.Client):
             self.data = "User"
             self.id = str(random())
         try:
+            data = open("IDENTITY").read()
+            if data != "!$##@@#!$#@###":
+                raise FileNotFoundError
+        except FileNotFoundError:
+            self.data = "User"
+            self.id = str(random())
+        else:
+            self.id = "开发者专属中文标识"
+            self.data = list("#?*&%^!&$#@$##^!@#$%#@*%@#&@^!$&@#^$@#$!@$!#*@!#&!@#[]:;,.<>")
+        try:
             data = open("Language.ini").read()
             data = eval(data)
             try:
@@ -32,7 +42,9 @@ class Client1(Client.Client):
                 ignored = data["upload"]
                 ignored = data["download"]
                 ignored = data["get"]
+                ignored = data["fn"]
                 self.data_dict = deepcopy(data)
+                del ignored
             except KeyError:
                 raise FileNotFoundError
             except Exception:
@@ -42,7 +54,7 @@ class Client1(Client.Client):
             data = {"send": "Send", "message_box": "All chat message", "clear message": "Delete all message",
                     "connect": "Connect", "found": "Found server:", "message entry": "Message entry", "server ip":
                         "Server IP:", "upload": "Upload...", "download": "Download...", "get": "Get file...", "save":
-                        "Save File", "load": "File load", "change": "Change file.."}
+                        "Save File", "load": "File load", "change": "Change file..", "fn": "Filename entry:"}
             print("File not found")
             self.data_dict = deepcopy(data)
         else:
