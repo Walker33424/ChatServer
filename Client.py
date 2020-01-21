@@ -3,6 +3,7 @@ import os
 import tkinter.filedialog as filedialog
 import socket as s
 import bz2
+import os
 from random import shuffle, random
 import threading as t
 import tkinter.ttk as ttk
@@ -160,7 +161,13 @@ class Client:
         print(filename)
         data = file.read()
         sock.connect((self.server_ip.get(), 8506))
-        sock.send(filename.encode() + b"!:!:UPLOAD!:!:" + data + b"-!end of file!-")
+        sock.send(filename.encode() + b"!:!:UPLOAD!:!:" + str(os.path.getsize(file_path)).encode()+ b"!:!:" + data +
+                  b"-!end of file!-")
+        response = sock.recv(102400).decode()
+        if response.startswith("ERROR"):
+            m.showerror("ERROR", response)
+        elif response == "Uploaded":
+            m.showinfo("INFO", "Your file uploaded")
 
     def delete_message(self):
         self.ignored_char = None

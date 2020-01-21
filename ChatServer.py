@@ -72,7 +72,14 @@ class ChatServer:
                 elif filename.split(b"!:!:")[1] == b"UPLOAD":
                     print("done to elif")
                     filename = filename.split(b"!:!:")
-                    file_data = filename[2]
+                    if int(filename[2]) > self.max_file_size:
+                        for x in range(6):
+                            sock[0].send(b"ERROR File size must > " + str(self.max_file_size).encode() + b"B")
+                            sock[0].close()
+                            continue
+                    file_data = filename[3]
+                    for x in range(6):
+                        sock[0].send(b"Uploaded")
                     if b"-!end of file!-" not in file_data:
                         print("recv more")
                         while True:
@@ -81,24 +88,21 @@ class ChatServer:
                                 print("break")
                                 break
                     print("process data")
-                    if len(file_data) > self.max_file_size:
-                        sock[0].send(b"ERROR File size must > " + str(self.max_file_size).encode() + b"B")
-                    else:
-                        message = (time.ctime() + " " + filename[0].decode() + "(" + sock[1][0] + ")" + "." + filename
+                    message = (time.ctime() + " " + filename[0].decode() + "(" + sock[1][0] + ")" + "." + filename
                             [0].
                                decode().split(".")[-1]).strip() + "File"
-                        message = message.strip()
-                        message = message.replace(":", " ")
-                        message = message.replace("(", "I")
-                        message = message.replace(")", "P")
-                        message = message.replace(" ", "")
-                        file = open(".\\data\\0" + message[:-4], "wb")
-                        file.write(file_data[:-15])
-                        file.close()
-                        print("send message")
-                        self._lock.acquire()
-                        self.new_message = deepcopy(message + "\n")
-                        self._lock.release()
+                    message = message.strip()
+                    message = message.replace(":", " ")
+                    message = message.replace("(", "I")
+                    message = message.replace(")", "P")
+                    message = message.replace(" ", "")
+                    file = open(".\\data\\0" + message[:-4], "wb")
+                    file.write(file_data[:-15])
+                    file.close()
+                    print("send message")
+                    self._lock.acquire()
+                    self.new_message = deepcopy(message + "\n")
+                    self._lock.release()
                 else:
                     sock[0].send(b"ERROR403")
                     sock[0].close()
