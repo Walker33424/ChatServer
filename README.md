@@ -58,3 +58,8 @@ Submitted by the client is not completed! Because I can't find my U disk, found 
 Update5:
 !!!!!You can upload files!
 But there is a small limitation, file name must be ASCII characters. Otherwise the server will ignore your upload
+
+Updata6:
+Fixed some bugs
+
+Upload file name supports UTF-8 encoding
