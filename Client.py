@@ -56,7 +56,8 @@ class Client:
             data = {"send": "Send", "message_box": "All chat message", "clear message": "Delete all message",
                     "connect": "Connect", "found": "Found server:", "message entry": "Message entry", "server ip":
                         "Server IP:", "upload": "Upload...", "download": "Download...", "get": "Get file...", "save":
-                        "Save File", "load": "File load", "change": "Change file..", "fn": "Filename entry:"}
+                        "Save File", "load": "File load", "change": "Change file..", "fn": "Filename entry:",
+                    "don't file": 'No need to add "file" at the end'}
             print("File not found")
             self.data_dict = deepcopy(data)
 
@@ -69,6 +70,7 @@ class Client:
         self.top = tk.Toplevel(self.tk)
         self.v = None
         self.sock = None
+        self.file_sock = None
         ttk.Button(self.tk, command=self.delete_message, text=data["clear message"]).place(x=0, y=250)
         self.message_entry = tk.Text(self.tk, height=15, width=60)
         tk.Label(self.tk, text=data["message entry"]).place(x=0, y=0)
@@ -112,7 +114,7 @@ class Client:
         c = s.socket()
         file_type = self.v.get().split(".")[-1]
         path = filedialog.asksaveasfilename(title=self.data_dict["save"], filetypes=([file_type.lower(), file_type.upper
-            ()],))
+        ()],))
         c.connect((self.server_ip.get(), self.image_transmission_port))
         if self.filename_entry.get():
             fn = self.filename_entry.get()
@@ -124,7 +126,7 @@ class Client:
         data = c.recv(102400)
         self.state = True
         while True:
-            data += c.recv(102400)
+            data += c.recv(1024000)
             if b"-!end!-" in data:
                 break
             elif data[:5] == b"ERROR":
@@ -135,12 +137,11 @@ class Client:
         file = open(path.replace("/", "\\") + self.v.get()[:-5].strip(), "wb")
         file.write(data[:-7].strip(b" "))
         file.close()
-        c.close()
 
     def loader2(self):
         tk2 = tk.Toplevel(self.tk)
         tk2.title(self.data_dict["load"])
-        tk2.geometry("250x250")
+        tk2.geometry("400x250")
         self.v = tk.StringVar(tk2)
         self.op = ttk.OptionMenu(tk2, self.v, *self.files)
         tk.Label(tk2, text=self.data_dict["change"]).place(x=0, y=0)
@@ -148,10 +149,11 @@ class Client:
         tk.Label(tk2, text=self.data_dict["fn"]).place(x=0, y=130)
         self.filename_entry = ttk.Entry(tk2)
         self.filename_entry.place(x=100, y=130)
+        tk.Label(tk2, text=self.data_dict["don't file"]).place(x=250, y=130)
         ttk.Button(tk2, command=self.file_saver, text=self.data_dict["change"]).pack()
 
     def loader(self):
-        sock = s.socket()
+        self.file_sock = s.socket()
         default_dir = r""
         file_path = filedialog.askopenfilename(title=self.data_dict["change"], initialdir=(os.path.expanduser
                                                                                            (default_dir)))
@@ -160,10 +162,11 @@ class Client:
         filename = file_path.split("\\")[-1]
         print(filename)
         data = file.read()
-        sock.connect((self.server_ip.get(), 8506))
-        sock.send(filename.encode() + b"!:!:UPLOAD!:!:" + str(os.path.getsize(file_path)).encode()+ b"!:!:" + data +
-                  b"-!end of file!-")
-        response = sock.recv(102400).decode()
+        self.file_sock.connect((self.server_ip.get(), 8506))
+        self.file_sock.send(filename.encode() + b"!:!:UPLOAD!:!:" + str(os.path.getsize(file_path)).encode() + b"!:!:"
+                            + data +
+                            b"-!end of file!-")
+        response = self.file_sock.recv(102400).decode()
         if response.startswith("ERROR"):
             m.showerror("ERROR", response)
         elif response == "Uploaded":

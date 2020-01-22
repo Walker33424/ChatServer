@@ -83,7 +83,7 @@ class ChatServer:
                     if b"-!end of file!-" not in file_data:
                         print("recv more")
                         while True:
-                            file_data += sock[0].recv(102400)
+                            file_data += sock[0].recv(1024000)
                             if b"-!end of file!-" in file_data:
                                 print("break")
                                 break
