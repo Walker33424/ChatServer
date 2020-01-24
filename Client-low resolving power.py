@@ -64,7 +64,7 @@ class Client1(Client.Client):
         self.top = tk.Toplevel(self.tk)
         self.v = None
         self.sock = None
-        ttk.Button(self.tk, command=self.delete_message, text=data["clear message"]).place(x=0, y=250)
+        ttk.Button(self.tk, command=self.delete_message, text=data["clear message"]).place(x=0, y=190)
         self.message_entry = tk.Text(self.tk, height=10, width=60)
         tk.Label(self.tk, text=data["message entry"]).place(x=0, y=0)
         self.message_entry.place(x=0, y=28)
@@ -81,10 +81,10 @@ class Client1(Client.Client):
         ttk.Button(self.tk, command=self.loader, text=self.data_dict["upload"]).place(x=450, y=0)
         ttk.Button(self.tk, command=self.loader2, text=self.data_dict["download"]).place(x=450, y=35)
         self.found_server.place(x=0, y=150)
-        self.message_box.place(x=0, y=305)
-        tk.Label(self.tk, text=data["message_box"]).place(x=0, y=280)
-        self.tk.geometry("650x600")
-        self.top.geometry("650x510")
+        self.message_box.place(x=0, y=250)
+        tk.Label(self.tk, text=data["message_box"]).place(x=0, y=220)
+        self.tk.geometry("600x520")
+        self.top.geometry("600x480")
         self.image_sock = None
         tk.Label(self.top, text=data["server ip"]).place(x=0, y=0)
         self.server_ip = ttk.Entry(self.top)
