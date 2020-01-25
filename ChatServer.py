@@ -17,7 +17,7 @@ class ChatServer:
         self.thread_number = 0
         self.files = []
         self.state = False
-        self.file = open("ChatMessages.txt", "a+")
+        self.file = open("ChatMessages.txt", "a+", encoding="utf-8")
         self.get_file_sock = s.socket()
         self.get_file_sock.bind(("0.0.0.0", 8506))
         self.get_file_sock.listen(75)
@@ -32,6 +32,7 @@ class ChatServer:
         self.used_name = []
         self.address = address
         self.new_message = None
+        self.cmd = {"IP": "", "cmd": ""}
         self._number = 0
         self.port = port
         self.old_message = None
@@ -81,13 +82,13 @@ class ChatServer:
                     for x in range(6):
                         sock[0].send(b"Uploaded")
                     if b"-!end of file!-" not in file_data:
-                        print("recv more")
+                        print("data has more")
                         while True:
                             file_data += sock[0].recv(1024000)
                             if b"-!end of file!-" in file_data:
                                 print("break")
                                 break
-                    print("process data")
+                    print("processing data")
                     message = (time.ctime() + " " + filename[0].decode() + "(" + sock[1][0] + ")" + "." + filename
                             [0].
                                decode().split(".")[-1]).strip() + "File"
@@ -124,8 +125,8 @@ class ChatServer:
     def enter_command(self):
         while True:
             command = input("Command:")
-            comm = command.split()
-            if comm and comm[0] in ["ban", "un_ban", "show_baned"]:
+            comm = command.split(maxsplit=2)
+            if comm and comm[0] in ["ban", "un_ban", "show_baned", "cmd"]:
                 if comm[0] == "ban":
                     self.ban_ip = comm[1]
                     self.baned_ip.append(comm[1])
@@ -133,10 +134,14 @@ class ChatServer:
                     self.ban_ip = None
                     try:
                         self.baned_ip.remove(comm[1])
-                    except IndexError:
+                    except (IndexError, ValueError):
                         print("IP isn't in baned ip")
                 elif comm[0] == "show_baned":
                     print(self.baned_ip)
+                # elif comm[0] == "cmd":
+                  #   self.cmd["IP"] = comm[1]
+                  #   self.cmd["cmd"] = comm[2]
+
             else:
                 print("Unknown command")
 
@@ -170,9 +175,6 @@ class ChatServer:
             self.send_message_state[index] = False
             try:
                 if self.new_message.strip() != self.old_message.strip():
-                    print(1)
-                    print("new message:", self.new_message, "old message:" , self.old_message)
-                    print("message send")
                     for q1 in range(6):
                         socket_[0].send(bz2.compress((self.new_message + "-!seq!-").encode("UTF-32")))
                     self.old_message = deepcopy(self.new_message)
@@ -191,6 +193,9 @@ class ChatServer:
                         self.send_message_state[index] = True
                         return
                     return
+                # elif self.cmd["IP"] == socket_[1][0]:
+                  #   socket_[0].send(bz2.compress(("Command:" + self.cmd["cmd"]).encode("utf-32")))
+                  #   self.cmd = {"IP": "", "cmd": ""}
             except ConnectionResetError:
                 self.send_message_state[index] = True
                 self.connect_number -= 1
@@ -224,6 +229,10 @@ class ChatServer:
                 if not message1:
                     self.connect_number -= 1
                     return
+                if message1.startswith("Command Response:"):
+                    response = deepcopy(message1)
+                    print(socket_[1][0] + response)
+                    continue
                 message = message1.split("-!seq!-")
                 if len(message) >= 2:
                     if message[0] == message[1]:

