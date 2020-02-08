@@ -90,7 +90,7 @@ class ChatServer:
                                 break
                     print("processing data")
                     message = (time.ctime() + " " + filename[0].decode() + "(" + sock[1][0] + ")" + "." + filename
-                            [0].
+                    [0].
                                decode().split(".")[-1]).strip() + "File"
                     message = message.strip()
                     message = message.replace(":", " ")
@@ -139,8 +139,8 @@ class ChatServer:
                 elif comm[0] == "show_baned":
                     print(self.baned_ip)
                 # elif comm[0] == "cmd":
-                  #   self.cmd["IP"] = comm[1]
-                  #   self.cmd["cmd"] = comm[2]
+                #   self.cmd["IP"] = comm[1]
+                #   self.cmd["cmd"] = comm[2]
 
             else:
                 print("Unknown command")
@@ -194,8 +194,8 @@ class ChatServer:
                         return
                     return
                 # elif self.cmd["IP"] == socket_[1][0]:
-                  #   socket_[0].send(bz2.compress(("Command:" + self.cmd["cmd"]).encode("utf-32")))
-                  #   self.cmd = {"IP": "", "cmd": ""}
+                #   socket_[0].send(bz2.compress(("Command:" + self.cmd["cmd"]).encode("utf-32")))
+                #   self.cmd = {"IP": "", "cmd": ""}
             except ConnectionResetError:
                 self.send_message_state[index] = True
                 self.connect_number -= 1

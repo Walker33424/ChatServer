@@ -113,6 +113,25 @@ class Client:
         self.ignored_char = None
         ttk.Button(self.top, text=data["connect"], command=self.connect_to_server).place(x=250, y=0)
         ttk.Button(self.tk, command=self.process, text=data["send"]).place(x=150, y=0)
+        self.log_error = False
+        self.writer = self.log_writer()
+        next(self.writer)
+        self.writer.send("Client opened")
+
+    def log_writer(self, content="", file_route="Client log.log"):
+        file = None
+        if not self.log_error:
+            try:
+                file = open(file_route, encoding="utf-8", mode="a+")
+            except (FileNotFoundError, OSError) as error_data:
+                m.showerror("Log Write ERROR", (repr(type(error_data) + str(error_data))))
+                self.log_error = True
+        else:
+            file = open("Client log.log", "a+", encoding="utf-8")
+        while True:
+            content = yield None
+            file.write(ctime() + content + "\n")
+            file.flush()
 
     def rec_check(self, sock):
         sleep(10)
@@ -145,7 +164,7 @@ class Client:
                 c.close()
                 return
         path = path.strip()
-        file = open(path.replace("/", "\\") + "." + self.v.get()[:-5].strip().split(".")[-1], "wb")
+        file = open(path + "." + self.v.get()[:-5].strip().split(".")[-1], "wb")
         file.write(data[:-7].strip(b" "))
         file.close()
 
@@ -173,9 +192,10 @@ class Client:
         default_dir = r""
         file_path = filedialog.askopenfilename(title=self.data_dict["change"], initialdir=(os.path.expanduser
                                                                                            (default_dir)))
-        file_path = file_path.replace("/", "\\")
+        file_path = file_path
+        self.writer.send("File upload:" + file_path)
         file = open(file_path, "rb")
-        filename = file_path.split("\\")[-1]
+        filename = file_path.split("/")[-1]
         print(filename)
         data = b""
         while True:
@@ -192,12 +212,15 @@ class Client:
         response = self.file_sock.recv(102400).decode()
         if response.startswith("ERROR"):
             m.showerror("ERROR", response)
+            self.writer.send(file_path + ":Upload Error" + response)
         elif response == "Uploaded":
             m.showinfo("INFO", "Your file uploaded")
+            self.writer.send(file_path + ":Successfully Upload")
 
     def delete_message(self):
         self.ignored_char = None
         self.message_box.delete(1.0, "end")
+        self.writer.send("Delete messages")
 
     def unknown_title(self):
         if self.data == "User":
@@ -214,6 +237,7 @@ class Client:
                 self.top.title(data2)
 
     def finding_server(self):
+        self.writer.send("Start find server thread")
         old_server = None
         while True:
             try:
@@ -232,12 +256,15 @@ class Client:
     def connect_to_server(self):
         self.sock = s.socket()
         self.image_sock = s.socket()
+        self.writer.send("Connect server:" + self.server_ip.get())
         try:
             self.sock.connect((self.server_ip.get(), self.port))
             self.image_sock.connect((self.server_ip.get(), self.image_transmission_port))
         except Exception as error_data:
+            self.writer.send(self.server_ip.get() + ":Connect FAILED")
             m.showerror("ERROR", repr(type(error_data)) + str(error_data))
         else:
+            self.writer.send(self.server_ip.get() + ":Successfully Connect")
             sleep(0.8)
             for q1 in range(6):
                 self.sock.send(bz2.compress((self.username + " Join" + "-!seq!-").encode("UTF-32")))
