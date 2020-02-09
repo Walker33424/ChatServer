@@ -2,19 +2,22 @@
 import threading as t
 import socket as s
 from random import random
+from time import *
 import sys
 import bz2
 from copy import *
 # from typing import Any, Tuple
+import tkinter.messagebox as m
 from time import sleep
 import time
 
 
 class ChatServer:
-    def __init__(self, port, address, server_name, max_file_size):
+    def __init__(self, port, address, server_name, max_file_size, log_file_route):
         self.connect_number = 0
         self.max_file_size = max_file_size
         self.thread_number = 0
+        self.log_file_route = log_file_route
         self.files = []
         self.state = False
         self.file = open("ChatMessages.txt", "a+", encoding="utf-8")
@@ -36,6 +39,28 @@ class ChatServer:
         self._number = 0
         self.port = port
         self.old_message = None
+        self.log_error = False
+        if self.log_file_route:
+            self.writer = self.log_writer(file_route=self.log_file_route)
+        else:
+            self.writer = self.log_writer()
+        next(self.writer)
+        self.writer.send("Server opened")
+
+    def log_writer(self, file_route="Server log.log"):
+        file = None
+        if not self.log_error:
+            try:
+                file = open(file_route, encoding="utf-8", mode="a+")
+            except (FileNotFoundError, OSError) as error_data:
+                m.showerror("Log Write ERROR", (repr(type(error_data) + str(error_data))))
+                self.log_error = True
+        else:
+            file = open("Client log.log", "a+", encoding="utf-8")
+        while True:
+            content = yield None
+            file.write(ctime() + ":" + content + "\n")
+            file.flush()
 
     def check_connect_timeout(self, sock):
         time.sleep(10)
@@ -66,19 +91,23 @@ class ChatServer:
                         data = open(".\\data\\" + filename[8:].decode(), "rb").read()
                     except FileNotFoundError:
                         sock[0].send(b"ERROR not found")
+                        self.writer.send(sock[1][0] + "Request File:" + filename[8:].decode() + ", Not found")
                     else:
+                        self.writer.send(sock[1][0] + "Successfully request file:" + filename[8:].decode())
                         sock[0].sendall(data + b"-!end!-")
                         sock[0].close()
                         continue
                 elif filename.split(b"!:!:")[1] == b"UPLOAD":
-                    print("done to elif")
                     filename = filename.split(b"!:!:")
+                    self.writer.send(sock[1][0] + "Upload file:" + filename[1].decode())
                     if int(filename[2]) > self.max_file_size:
+                        self.writer.send(sock[1][0] + ":Upload File size too big")
                         for x in range(6):
                             sock[0].send(b"ERROR File size must > " + str(self.max_file_size).encode() + b"B")
                             sock[0].close()
                             continue
                     file_data = filename[3]
+                    self.writer.send(sock[1][0] + "Successfully upload file")
                     for x in range(6):
                         sock[0].send(b"Uploaded")
                     if b"-!end of file!-" not in file_data:
@@ -105,6 +134,7 @@ class ChatServer:
                     self.new_message = deepcopy(message + "\n")
                     self._lock.release()
                 else:
+                    self.writer.send(sock[1][0] + ":Dont know how to continue:" + filename.decode())
                     sock[0].send(b"ERROR403")
                     sock[0].close()
                     continue
@@ -144,6 +174,9 @@ class ChatServer:
 
             else:
                 print("Unknown command")
+                self.writer.send("Enter Unknown Command:" + command)
+                continue
+            self.writer.send("Enter command:" + command)
 
     def processing_communication(self, socket_, name1):
         """Broadcasting information to users
@@ -165,6 +198,7 @@ class ChatServer:
         try:
             index = self.send_message_state.index(name1)
         except ValueError:
+            self.writer.send(socket_[1][0] + "Connect Error")
             socket_[0].send(bz2.compress("你的连接存在错误, 请重新连接(connect wrong happen, please try again)"))
             socket_[0].close()
         self.connect_number += 1
@@ -188,6 +222,7 @@ class ChatServer:
                         for q1 in range(6):
                             socket_[0].send(bz2.compress("友好的中文提示:你已被踢出服务器, 并且在管理员没有取消封杀的情况下无法再次加入".encode("utf-32")))
                         socket_[0].close()
+                        self.writer.send("Baned IP:" + socket_[1][0] + ", Disconnected")
                     except OSError:
                         self.connect_number -= 1
                         self.send_message_state[index] = True
@@ -197,6 +232,7 @@ class ChatServer:
                 #   socket_[0].send(bz2.compress(("Command:" + self.cmd["cmd"]).encode("utf-32")))
                 #   self.cmd = {"IP": "", "cmd": ""}
             except ConnectionResetError:
+                self.writer.send("Disconnected from " + socket_[1][0])
                 self.send_message_state[index] = True
                 self.connect_number -= 1
                 return
@@ -205,6 +241,7 @@ class ChatServer:
         sock = s.socket(type=s.SOCK_DGRAM)
         sock.bind(("0.0.0.0", 18500))
         print("Start sending broadcast packets")
+        self.writer.send("Start sending broadcast packets")
         while True:
             sock.sendto(("Server:" + self.server_name).encode(), (self.address, 13365))
             sleep(5)
@@ -246,6 +283,8 @@ class ChatServer:
                 self.connect_number -= 1
                 print("INFO:recv the wrong message,from" + socket_[1][0])
                 print("The wrong message is:", message1[:20] + "..." + message1[-20:])
+                self.writer.send("Method 'recv':wrong message:" + message1[:20] + "..." + message1[-20:] + ", from " + socket_[1][0])
+                self.writer.send(socket_[1][0] + "Closed")
                 return
             except ConnectionResetError:
                 self.connect_number -= 1
@@ -274,6 +313,11 @@ class ChatServer:
                 print("No connection".center(79, "*"))
                 server.bind(("0.0.0.0", self.port))
                 server.listen(conn_num)
+            except OSError:
+                self.writer.send("Error in line 298:Port 8000 is using")
+                print("Error:Port 8000 is using")
+                input()
+                sys.exit()
             except Exception as error_data:
                 print(type(error_data), error_data)
             else:
@@ -283,9 +327,13 @@ class ChatServer:
             try:
                 data_socket = server.accept()
                 if data_socket[1][0] in self.baned_ip:
+                    self.writer.send("baned IP" + data_socket[1][0] + "try connect to server.")
                     data_socket[0].send(bz2.compress("You Can't join us".encode("utf-32")))
+                    data_socket[0].close()
+                    self.writer.send("Disconnected baned IP" + data_socket[1][0])
                     del data_socket
                     continue
+                self.writer.send("New connect:" + data_socket[1][0] + ",Port" + str(data_socket[1][1]))
                 print("INFO:Connect from:" + data_socket[1][0] + ", port:" + str(data_socket[1][1]))
                 self.users.append(data_socket[1])
                 ran1 = str(random())
@@ -299,12 +347,9 @@ class ChatServer:
                 t.Thread(target=self.processing_communication2, args=(data_socket,)).start()
                 print(3)
             except (TypeError, ValueError):
+                self.writer.send("Error in line 322:TypeError or ValueError")
                 print("please input again")
                 continue
-            except OSError:
-                print("Error:Port 8000 is in use")
-                input()
-                sys.exit()
             self.users.append(data_socket[1][0])
             print("New connect:", data_socket[1][0])
             print("Connection Number:", self.connect_number // 2)
@@ -316,7 +361,8 @@ def main():
     radio_address = input("Please enter radio broadcast address:")
     sn = input("Please enter the server name:")[:30]
     file_size = int(input("Please input max upload file size(B):"))
-    server = ChatServer(8505, radio_address, sn, file_size)
+    log_file_route = input("Please enter the log file save route:")
+    server = ChatServer(8505, radio_address, sn, file_size, log_file_route)
     server.processing_connections()
 
 

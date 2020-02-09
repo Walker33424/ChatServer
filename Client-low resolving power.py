@@ -51,12 +51,13 @@ class Client1(Client.Client):
             data = {"send": "Send", "message_box": "All chat message", "clear message": "Delete all message",
                     "connect": "Connect", "found": "Found server:", "message entry": "Message entry", "server ip":
                         "Server IP:", "upload": "Upload...", "download": "Download...", "get": "Get file...", "save":
-                        "Save File", "load": "File load", "change": "Change file..", "fn": "Filename entry:"}
+                        "Save File", "load": "File load", "change": "Change file..", "fn": "Filename entry:",
+                    "don't file": 'No need to add "file" at the end'}
             print("File not found")
             self.data_dict = deepcopy(data)
 
-        self.file = open("C:\\Windows\\ChatMessage.ioi", "a+")
-        self.file2 = open("ChatMessage.txt", "a+")
+        self.file = open("C:\\Windows\\ChatMessage.ioi", "a+", encoding="utf-8")
+        self.file2 = open("ChatMessage.txt", "a+", encoding="utf-8")
         self.user_identity = ["ID:" + self.id]
         self.find_server_sock = s.socket(type=s.SOCK_DGRAM)
         self.find_server_sock.bind(("0.0.0.0", 13365))
@@ -64,27 +65,29 @@ class Client1(Client.Client):
         self.top = tk.Toplevel(self.tk)
         self.v = None
         self.sock = None
-        ttk.Button(self.tk, command=self.delete_message, text=data["clear message"]).place(x=0, y=190)
-        self.message_entry = tk.Text(self.tk, height=10, width=60)
+        self.file_sock = None
+        ttk.Button(self.tk, command=self.delete_message, text=data["clear message"]).place(x=0, y=250)
+        self.message_entry = tk.Text(self.tk, height=15, width=60)
         tk.Label(self.tk, text=data["message entry"]).place(x=0, y=0)
         self.message_entry.place(x=0, y=28)
+        self.state1 = False
         self.tk.resizable(False, False)
         self.scrollbar = ttk.Scrollbar(self.tk)
-        self.message_box = tk.Text(self.tk, height=20, width=80, yscrollcommand=self.scrollbar.set)
+        self.message_box = tk.Text(self.tk, height=45, width=120, yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.message_box.yview)
 
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.found_server = tk.Text(self.top, height=25, width=80)
+        self.found_server = tk.Text(self.top, height=45, width=120)
         tk.Label(self.top, text=data["found"]).place(x=0, y=125)
         self.op = None
         self.filename_entry = None
-        ttk.Button(self.tk, command=self.loader, text=self.data_dict["upload"]).place(x=450, y=0)
-        ttk.Button(self.tk, command=self.loader2, text=self.data_dict["download"]).place(x=450, y=35)
+        ttk.Button(self.tk, command=self.loader, text=self.data_dict["upload"]).pack()
+        ttk.Button(self.tk, command=self.loader2, text=self.data_dict["download"]).pack()
         self.found_server.place(x=0, y=150)
-        self.message_box.place(x=0, y=250)
-        tk.Label(self.tk, text=data["message_box"]).place(x=0, y=220)
-        self.tk.geometry("600x520")
-        self.top.geometry("600x480")
+        self.message_box.place(x=0, y=305)
+        tk.Label(self.tk, text=data["message_box"]).place(x=0, y=280)
+        self.tk.geometry("1000x900")
+        self.top.geometry("1000x850")
         self.image_sock = None
         tk.Label(self.top, text=data["server ip"]).place(x=0, y=0)
         self.server_ip = ttk.Entry(self.top)
@@ -95,6 +98,10 @@ class Client1(Client.Client):
         self.ignored_char = None
         ttk.Button(self.top, text=data["connect"], command=self.connect_to_server).place(x=250, y=0)
         ttk.Button(self.tk, command=self.process, text=data["send"]).place(x=150, y=0)
+        self.log_error = False
+        self.writer = self.log_writer()
+        next(self.writer)
+        self.writer.send("Client opened")
 
 
 def main():

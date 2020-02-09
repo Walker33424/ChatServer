@@ -118,7 +118,7 @@ class Client:
         next(self.writer)
         self.writer.send("Client opened")
 
-    def log_writer(self, content="", file_route="Client log.log"):
+    def log_writer(self, file_route="Client log.log"):
         file = None
         if not self.log_error:
             try:
@@ -130,7 +130,7 @@ class Client:
             file = open("Client log.log", "a+", encoding="utf-8")
         while True:
             content = yield None
-            file.write(ctime() + content + "\n")
+            file.write(ctime() + ":" + content + "\n")
             file.flush()
 
     def rec_check(self, sock):
@@ -144,12 +144,13 @@ class Client:
         c = s.socket()
         file_type = self.v.get().split(".")[-1]
         path = filedialog.asksaveasfilename(title=self.data_dict["save"], filetypes=([file_type.lower(), file_type.upper
-        ()],))
+            ()],))
         c.connect((self.server_ip.get(), self.image_transmission_port))
         if self.filename_entry.get():
             fn = self.filename_entry.get()
         else:
             fn = self.v.get()[:-5]
+        self.writer.send("Request File:" + fn)
         c.send(b"REQUEST:" + b"0" + fn.encode())
         t.Thread(target=self.rec_check, args=(c,))
         self.state = False
@@ -161,12 +162,14 @@ class Client:
                 break
             elif data[:5] == b"ERROR":
                 m.showerror("ERROR", data.decode("utf-8"))
+                self.writer.send(fn + "Download Error:" + data.decode("utf-8"))
                 c.close()
                 return
         path = path.strip()
         file = open(path + "." + self.v.get()[:-5].strip().split(".")[-1], "wb")
         file.write(data[:-7].strip(b" "))
         file.close()
+        self.writer.send(fn + ":Successfully Download")
 
     def check_timeout(self, sock):
         sleep(10)
@@ -208,7 +211,7 @@ class Client:
                             + data +
                             b"-!end of file!-")
         self.state1 = False
-        t.Thread(target=self.check_timeout, args=(self.file_sock, )).start()
+        t.Thread(target=self.check_timeout, args=(self.file_sock,)).start()
         response = self.file_sock.recv(102400).decode()
         if response.startswith("ERROR"):
             m.showerror("ERROR", response)
