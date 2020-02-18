@@ -1,4 +1,4 @@
-﻿# -*- coding:UTF-8 -*-
+# -*- coding:UTF-8 -*-
 import socket as s
 import Client
 from random import random
@@ -67,17 +67,17 @@ class Client1(Client.Client):
         self.sock = None
         self.file_sock = None
         ttk.Button(self.tk, command=self.delete_message, text=data["clear message"]).place(x=0, y=250)
-        self.message_entry = tk.Text(self.tk, height=15, width=60)
+        self.message_entry = tk.Text(self.tk, height=15, width=40)
         tk.Label(self.tk, text=data["message entry"]).place(x=0, y=0)
         self.message_entry.place(x=0, y=28)
         self.state1 = False
         self.tk.resizable(False, False)
         self.scrollbar = ttk.Scrollbar(self.tk)
-        self.message_box = tk.Text(self.tk, height=45, width=120, yscrollcommand=self.scrollbar.set)
+        self.message_box = tk.Text(self.tk, height=13, width=95, yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.message_box.yview)
 
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.found_server = tk.Text(self.top, height=45, width=120)
+        self.found_server = tk.Text(self.top, height=15, width=75)
         tk.Label(self.top, text=data["found"]).place(x=0, y=125)
         self.op = None
         self.filename_entry = None
@@ -86,8 +86,8 @@ class Client1(Client.Client):
         self.found_server.place(x=0, y=150)
         self.message_box.place(x=0, y=305)
         tk.Label(self.tk, text=data["message_box"]).place(x=0, y=280)
-        self.tk.geometry("1000x900")
-        self.top.geometry("1000x850")
+        self.tk.geometry("700x500")
+        self.top.geometry("600x400")
         self.image_sock = None
         tk.Label(self.top, text=data["server ip"]).place(x=0, y=0)
         self.server_ip = ttk.Entry(self.top)

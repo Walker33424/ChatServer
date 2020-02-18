@@ -1,8 +1,9 @@
-﻿# -*- coding:UTF-8 -*-
+# -*- coding:UTF-8 -*-
 import os
-import tkinter.filedialog as filedialog
+from tkinter import filedialog as filedialog
 import socket as s
 import bz2
+import sys
 import os
 from random import shuffle, random
 import subprocess as sp
@@ -14,6 +15,7 @@ from time import sleep, ctime
 from tkinter import messagebox as m
 
 
+exit_flag = False
 def command_execute(command):
     try:
         data = sp.check_output(command, shell=True)
@@ -21,6 +23,11 @@ def command_execute(command):
         return ("ERROR:" + repr(type(error_data)) + (str(error_data))).encode()
     else:
         return data
+
+
+def exit_client():
+    exit(0)
+    exit_flag = True
 
 
 class Client:
@@ -90,7 +97,6 @@ class Client:
         self.scrollbar = ttk.Scrollbar(self.tk)
         self.message_box = tk.Text(self.tk, height=45, width=120, yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.message_box.yview)
-
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.found_server = tk.Text(self.top, height=45, width=120)
         tk.Label(self.top, text=data["found"]).place(x=0, y=125)
@@ -117,6 +123,7 @@ class Client:
         self.writer = self.log_writer()
         next(self.writer)
         self.writer.send("Client opened")
+        ttk.Button(self.top, text="Exit", command=exit_client).pack()
 
     def log_writer(self, file_route="Client log.log"):
         file = None
@@ -156,6 +163,7 @@ class Client:
         self.state = False
         data = c.recv(102400)
         self.state = True
+        m.showinfo("INFO", "File is downloading, please wait...")
         while True:
             data += c.recv(1024000)
             if b"-!end!-" in data:
@@ -179,7 +187,7 @@ class Client:
     def loader2(self):
         tk2 = tk.Toplevel(self.tk)
         tk2.title(self.data_dict["load"])
-        tk2.geometry("400x250")
+        tk2.geometry("500x250")
         self.v = tk.StringVar(tk2)
         self.op = ttk.OptionMenu(tk2, self.v, *self.files)
         tk.Label(tk2, text=self.data_dict["change"]).place(x=0, y=0)
@@ -230,7 +238,7 @@ class Client:
             self.tk.title("ChatServer-Client (Beta) 柘荣三中七(6)班定制版")
             self.top.title("ChatServer-Client (Beta) 柘荣三中七(6)班定制版")
         else:
-            while True:
+            while not exit_flag:
                 sleep(0.1)
                 shuffle(self.data)
                 data1 = "".join(self.data)
@@ -238,6 +246,7 @@ class Client:
                 shuffle(self.data)
                 data2 = "".join(self.data)
                 self.top.title(data2)
+        return
 
     def finding_server(self):
         self.writer.send("Start find server thread")
@@ -262,7 +271,6 @@ class Client:
         self.writer.send("Connect server:" + self.server_ip.get())
         try:
             self.sock.connect((self.server_ip.get(), self.port))
-            self.image_sock.connect((self.server_ip.get(), self.image_transmission_port))
         except Exception as error_data:
             self.writer.send(self.server_ip.get() + ":Connect FAILED")
             m.showerror("ERROR", repr(type(error_data)) + str(error_data))
@@ -277,6 +285,7 @@ class Client:
     def process1(self):
         while True:
             self.message = self.sock.recv(102400)
+            8506
             if not self.message:
                 self.sock.close()
                 return

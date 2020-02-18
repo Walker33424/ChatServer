@@ -75,12 +75,16 @@ class ChatServer:
             self.state = False
             sock = self.get_file_sock.accept()
             if sock[1][0] in self.baned_ip:
+                sock[0].send("ERROR:你已被封禁".encode())
                 sock[0].close()
                 continue
+            self.writer.send("New file transmission connect" + sock[1][0])
+            print("New file transmission connect")
             t.Thread(target=self.check_connect_timeout, args=(sock,)).start()
             try:
                 filename = sock[0].recv(102400)
             except OSError:
+                print("time out")
                 continue
             self.state = True
             print("filename.split(b':')[1]:", filename.split(b":")[1])
@@ -239,6 +243,7 @@ class ChatServer:
 
     def radio_broadcast(self):
         sock = s.socket(type=s.SOCK_DGRAM)
+        sock.setsockopt(s.SOL_SOCKET, s.SO_BROADCAST, 1)
         sock.bind(("0.0.0.0", 18500))
         print("Start sending broadcast packets")
         self.writer.send("Start sending broadcast packets")
