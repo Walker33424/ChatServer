@@ -93,9 +93,9 @@ class Client:
         tk.Label(self.tk, text=data["message entry"]).place(x=0, y=0)
         self.message_entry.place(x=0, y=28)
         self.state1 = False
-        self.tk.resizable(False, False)
+        self.tk.resizable(False, True)
         self.scrollbar = ttk.Scrollbar(self.tk)
-        self.message_box = tk.Text(self.tk, height=45, width=120, yscrollcommand=self.scrollbar.set)
+        self.message_box = tk.Text(self.tk, height=40, width=120, yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.message_box.yview)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.found_server = tk.Text(self.top, height=45, width=120)
