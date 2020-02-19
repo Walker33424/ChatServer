@@ -73,7 +73,7 @@ class Client1(Client.Client):
         self.state1 = False
         self.tk.resizable(False, False)
         self.scrollbar = ttk.Scrollbar(self.tk)
-        self.message_box = tk.Text(self.tk, height=13, width=95, yscrollcommand=self.scrollbar.set)
+        self.message_box = tk.Text(self.tk, height=10, width=80, yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.message_box.yview)
 
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
