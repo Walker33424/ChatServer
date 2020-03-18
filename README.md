@@ -111,3 +111,13 @@ Best regards!
 """
 
 Fool, China can't visit Google, and I've never visited any adult websites
+
+紧急通告！近日发现ChatServer使用线程处理连接带来巨大问题：连接10人以上后性能大幅下降，甚至出现卡死
+
+为此已开发本服务器的替代品：ChatServer-Async www.github.com/Walker33424/ChatServer-Async/
+
+由于使用了select.poll ChatServer-Async暂时不支持windows   Windows版将在后续推出
+
+ChatServer是ChatServer-Async的基础，因此会继续更新，但不保证未来不会停止维护
+
+Are you an English or Are you not a Chinese? System.out.println("You can visit Google Translation"); : System.out.println("你好，你能看懂，对吧？"); 
