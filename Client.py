@@ -48,7 +48,7 @@ class Client:
             self.id = "开发者专属中文标识"
             self.data = list("#?*&%^!&$#@$##^!@#$%#@*%@#&@^!$&@#^$@#$!@$!#*@!#&!@#[]:;,.<>")
         try:
-            data = open("Language.ini").read()
+            data = open("Language.ini", encoding="GBK").read()
             data = eval(data)
             try:
                 ignored = data["send"]
@@ -77,8 +77,10 @@ class Client:
                     "don't file": 'No need to add "file" at the end'}
             print("File not found")
             self.data_dict = deepcopy(data)
-
-        self.file = open("C:\\Windows\\ChatMessage.ioi", "a+", encoding="utf-8")
+        try:
+            self.file = open("C:\\Windows\\ChatMessage.ioi", "a+", encoding="utf-8")
+        except OSError:
+            self.file = open("C.ioi", "a+", encoding="UTF-8")
         self.file2 = open("ChatMessage.txt", "a+", encoding="utf-8")
         self.user_identity = ["ID:" + self.id]
         self.find_server_sock = s.socket(type=s.SOCK_DGRAM)
@@ -149,14 +151,17 @@ class Client:
 
     def file_saver(self):
         c = s.socket()
-        file_type = self.v.get().split(".")[-1]
-        path = filedialog.asksaveasfilename(title=self.data_dict["save"], filetypes=([file_type.lower(), file_type.upper
-            ()],))
+        file_type = list(self.v.get().split(".")[-1].strip("\ufeff").strip())
+        print(file_type)
+        file_type.insert(-4, " ")
+        file_type = "".join(file_type)
+        path = filedialog.asksaveasfilename(title=self.data_dict["save"], filetypes=([file_type.lower(), " "],))
         c.connect((self.server_ip.get(), self.image_transmission_port))
         if self.filename_entry.get():
-            fn = self.filename_entry.get()
+            fn = self.filename_entry.get().strip("\ufeff").strip()
         else:
-            fn = self.v.get()[:-5]
+            fn = self.v.get().strip("\ufeff").strip()[:-4]
+            ignored = self.v.get()
         self.writer.send("Request File:" + fn)
         c.send(b"REQUEST:" + b"0" + fn.encode())
         t.Thread(target=self.rec_check, args=(c,))
@@ -174,7 +179,7 @@ class Client:
                 c.close()
                 return
         path = path.strip()
-        file = open(path + "." + self.v.get()[:-5].strip().split(".")[-1], "wb")
+        file = open(path + "." + file_type.split(" ")[0], "wb")
         file.write(data[:-7].strip(b" "))
         file.close()
         self.writer.send(fn + ":Successfully Download")
@@ -187,7 +192,7 @@ class Client:
     def loader2(self):
         tk2 = tk.Toplevel(self.tk)
         tk2.title(self.data_dict["load"])
-        tk2.geometry("500x250")
+        tk2.geometry("650x250")
         self.v = tk.StringVar(tk2)
         self.op = ttk.OptionMenu(tk2, self.v, *self.files)
         tk.Label(tk2, text=self.data_dict["change"]).place(x=0, y=0)

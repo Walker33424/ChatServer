@@ -92,7 +92,7 @@ class ChatServer:
             try:
                 if filename[:8] == b"REQUEST:":
                     try:
-                        data = open(".\\data\\" + filename[8:].decode(), "rb").read()
+                        data = open("data/" + filename[8:].decode(), "rb").read()
                     except FileNotFoundError:
                         sock[0].send(b"ERROR not found")
                         self.writer.send(sock[1][0] + "Request File:" + filename[8:].decode() + ", Not found")
@@ -101,7 +101,7 @@ class ChatServer:
                         sock[0].sendall(data + b"-!end!-")
                         sock[0].close()
                         continue
-                elif filename.split(b"!:!:")[1] == b"UPLOAD":
+                elif filename.split(b"!:!:", 3)[1] == b"UPLOAD":
                     filename = filename.split(b"!:!:")
                     self.writer.send(sock[1][0] + "Upload file:" + filename[1].decode())
                     if int(filename[2]) > self.max_file_size:
@@ -130,7 +130,7 @@ class ChatServer:
                     message = message.replace("(", "I")
                     message = message.replace(")", "P")
                     message = message.replace(" ", "")
-                    file = open(".\\data\\0" + message[:-4], "wb")
+                    file = open("data/0" + message[:-4], "wb")
                     file.write(file_data[:-15])
                     file.close()
                     print("send message")
