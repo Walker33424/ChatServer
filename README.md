@@ -121,3 +121,7 @@ Fool, China can't visit Google, and I've never visited any adult websites
 ChatServer是ChatServer-Async的基础，因此会继续更新，但不保证未来不会停止维护
 
 Are you an English or Are you not a Chinese? System.out.println("You can visit Google Translation"); : System.out.println("你好，你能看懂，对吧？"); 
+
+2020/5/2
+
+鉴于select.select的局限性，Windows版本已停止更新，且未来也不会有任何形式的更新，ChatServer.py会作为基础继续存在。之后的所有更新将只在ChatServer-Async中进行
